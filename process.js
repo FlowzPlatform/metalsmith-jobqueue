@@ -13,13 +13,8 @@ const cxnOptions = {
 const webRootPath = process.env.webRootPath;
 const metalSourcePath = webRootPath + 'node_modules/';
 const websitePath = webRootPath + 'websites/';
-
-console.log(webRootPath + '==' + metalSourcePath + '==' + websitePath);
-
-let ProgressBar = require('progress');
 let responseConfig
 let rawConfigs
-    // var bar = new ProgressBar(':bar', { total: 10 });
 
 const q = new Queue(cxnOptions, qOptions)
 let config;
@@ -32,9 +27,10 @@ function getJobs() {
 
     q.process(async(job, next, onCancel) => {
 
-        job['userId'] = '5a96a75c7c791e0013c8c7d2';
+        
 
         try {
+            // job['userId'] = job.userId;
             websitename = job.websitejobqueuedata.RepojsonData.websiteName;
             websiteid = job.websitejobqueuedata.RepojsonData.id
             iscancelled = false;
@@ -51,7 +47,7 @@ function getJobs() {
                 baseURL: job.websitejobqueuedata.baseURL
             }
 
-            let folderUrl = websitePath + job.userId + job.Websiteid + '/.temppublish'
+            let folderUrl = websitePath +'/'+ job.userId +'/'+ job.websiteId + '/.temppublish'
                 //let folderUrl = rawConfigs[0].repoSettings[0].BaseURL + '/.temppublish'
             let partialstotal = []
             let pageSeoTitle;
@@ -307,7 +303,7 @@ function getJobs() {
                 contentpartials = contentpartials.data
                 let backlayoutdata = (layoutdata);
                 let newFolderName = folderUrl + '/temp';
-                let destPath = websitePath + job.userId + job.Websiteid + '/public';
+                let destPath = websitePath + job.userId + job.websiteId + '/public';
                 await axios.post(config.baseURL + '/save-menu', {
                         foldername: newFolderName,
                         type: 'folder'
