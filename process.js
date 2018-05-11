@@ -22,15 +22,15 @@ let config;
 let websitename;
 let websiteid;
 let iscancelled
+let logfile='';
 
 function getJobs() {
 
     q.process(async(job, next, onCancel) => {
 
-        
-
         try {
             // job['userId'] = job.userId;
+            logfile='#######################################################################\n\nPublish starting for Website:'+job.websitejobqueuedata.RepojsonData.websiteName+'\n\nuserID:'+job.websitejobqueuedata.RepojsonData.userId+'\n\nStarting Publish...\n'
             websitename = job.websitejobqueuedata.RepojsonData.websiteName;
             websiteid = job.websitejobqueuedata.RepojsonData.id
             iscancelled = false;
@@ -47,7 +47,7 @@ function getJobs() {
                 baseURL: job.websitejobqueuedata.baseURL
             }
 
-            let folderUrl = websitePath +'/'+ job.userId +'/'+ job.websiteId + '/.temppublish'
+            let folderUrl = websitePath + job.userId +'/'+ job.websiteId + '/.temppublish'
                 //let folderUrl = rawConfigs[0].repoSettings[0].BaseURL + '/.temppublish'
             let partialstotal = []
             let pageSeoTitle;
@@ -94,7 +94,9 @@ function getJobs() {
                 }
             };
             let loadingText
+            logfile=logfile+'\nNumber of pages to Publish :'+rawConfigs[1].pageSettings.length
             for (let i = 0; i < rawConfigs[1].pageSettings.length; i++) {
+            logfile=logfile+'\n\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n'
                 if (check == false) {
                     console.log('cancelling current')
                     break
@@ -196,7 +198,7 @@ function getJobs() {
                 let pageMetaInfo = [];
 
                 let PageMetacharset = '';
-
+                logfile=logfile+'\nCurrently: '+nameF+'\n'
                 Layout = rawSettings[1].pageSettings[i].PageLayout
                 partialsPage = rawSettings[1].pageSettings[i].partials
                 let back_partials = (partialsPage);
@@ -293,7 +295,7 @@ function getJobs() {
                     // this.fullscreenLoading = false
                 });
                 let responseMetal = '';
-
+                logfile=logfile+'\n-Preparing Metalsmith Config file ...\n'
                 let backupMetalSmith = '';
 
                 let contentpartials = await axios.get(config.baseURL + '/save-menu/0?path=' + folderUrl + '/Pages/' + nameF + '.html').catch((err) => {
@@ -303,11 +305,12 @@ function getJobs() {
                 contentpartials = contentpartials.data
                 let backlayoutdata = (layoutdata);
                 let newFolderName = folderUrl + '/temp';
-                let destPath = websitePath + job.userId + job.websiteId + '/public';
+                let destPath = websitePath + job.userId +'/'+ job.websiteId + '/public';
                 await axios.post(config.baseURL + '/save-menu', {
                         foldername: newFolderName,
                         type: 'folder'
                     }).then(async(res) => {
+
                         for (let p = 0; p < back_partials.length; p++) {
                             let responsepartials = await axios.get(config.baseURL + '/save-menu/0?path=' + folderUrl + '/Partials/' + Object.keys(back_partials[p]) + '/' + back_partials[p][Object.keys(back_partials[p])] + '.partial').catch((err) => {
                                 console.log(err);
@@ -490,6 +493,7 @@ function getJobs() {
 
                 responseMetal = responseMetal.substr(0, indexPartial + 14) + partials + responseMetal.substr(indexPartial + 14);
                 // console.log('final responseMetal:', responseMetal)
+                logfile=logfile+'\n-Done Preparing Metalsmith File. Now, Gathering required files ...\n'
                 let mainMetal = folderUrl + '/public/assets/metalsmithPublish.js'
                 let value = true;
                 await axios.post(config.baseURL + '/save-menu', {
@@ -573,6 +577,7 @@ function getJobs() {
                                                         type: 'file'
                                                     })
                                                     .then(async(res) => {
+                                                        logfile=logfile+'\n-Successfully file published.'
                                                         // var previewFile = this.$store.state.fileUrl.replace(/\\/g, "\/");
                                                         // previewFile = folderUrl.replace('/var/www/html', '');
 
@@ -711,10 +716,11 @@ function getJobs() {
                     console.log(e)
                 })
             if (check != false) {
+                logfile=logfile+'\n\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\nAll Pages Published.\n\n#######################################################################'
                 // console.log('####################################',rawConfigs[0].repoSettings[0].BaseURL + '/public/log.md')
                 await axios.post(config.baseURL + '/save-menu', {
                     filename: rawConfigs[0].repoSettings[0].BaseURL + '/public/log.md',
-                    text: '# Welcome to Log File!\n' + JSON.stringify(job.log, null, 4),
+                    text: '# Welcome to Log File!\n' +logfile,
                     type: 'file'
                 }).catch((e) => {
                     console.log(e)
