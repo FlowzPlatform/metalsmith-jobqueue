@@ -1,4 +1,0 @@
-run following code in terminal:
-
-
- webRootPath=/var/www/html/ node process.js 
