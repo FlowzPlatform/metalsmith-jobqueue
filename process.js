@@ -1,18 +1,25 @@
 const Queue = require('rethinkdb-job-queue')
 const axios = require('axios')
-const jsonformat=require('json-format')
+const jsonformat = require('json-format')
 const _ = require('lodash');
 const qOptions = {
     name: 'Metalsmith'
-    // concurrency: 5 // The queue and table name
+        // concurrency: 5 // The queue and table name
 }
 const cxnOptions = {
     db: 'JobQueue' // The name of the database in RethinkDB
 }
+
+const webRootPath = process.env.webRootPath;
+const metalSourcePath = webRootPath + 'node_modules/';
+const websitePath = webRootPath + 'websites/';
+
+console.log(webRootPath + '==' + metalSourcePath + '==' + websitePath);
+
 let ProgressBar = require('progress');
 let responseConfig
 let rawConfigs
-// var bar = new ProgressBar(':bar', { total: 10 });
+    // var bar = new ProgressBar(':bar', { total: 10 });
 
 const q = new Queue(cxnOptions, qOptions)
 let config;
@@ -23,25 +30,29 @@ let iscancelled
 
 function getJobs() {
 
-    q.process(async (job, next, onCancel) => {
+    q.process(async(job, next, onCancel) => {
+
+        job['userId'] = '5a96a75c7c791e0013c8c7d2';
 
         try {
             websitename = job.websitejobqueuedata.RepojsonData.websiteName;
-            websiteid=job.websitejobqueuedata.RepojsonData.id
+            websiteid = job.websitejobqueuedata.RepojsonData.id
             iscancelled = false;
             let check = true;
             onCancel(job, () => {
-                // Gracefully stop your job here\
-                check = false;
-            })
-            // Do something with your result
+                    // Gracefully stop your job here\
+                    check = false;
+                })
+                // Do something with your result
             responseConfig = job.websitejobqueuedata.RepojsonData
             rawConfigs = responseConfig.configData;
             config = {
-                metalpath: '/var/www/html/node_modules/',
+                metalpath: metalSourcePath,
                 baseURL: job.websitejobqueuedata.baseURL
             }
-            let folderUrl = rawConfigs[0].repoSettings[0].BaseURL + '/.temppublish'
+
+            let folderUrl = websitePath + job.userId + job.Websiteid + '/.temppublish'
+                //let folderUrl = rawConfigs[0].repoSettings[0].BaseURL + '/.temppublish'
             let partialstotal = []
             let pageSeoTitle;
             let externalJs = rawConfigs[1].projectSettings[1].ProjectExternalJs;
@@ -91,10 +102,10 @@ function getJobs() {
                 if (check == false) {
                     console.log('cancelling current')
                     break
-                    return next()
+                    // return next()
                 }
                 job.updateProgress(Math.ceil(((i + 1) / rawConfigs[1].pageSettings.length) * 100)).catch(err => console.error(err))
-                // loadingText = ((i / rawConfigs[1].pageSettings.length) * 100).toFixed(0) + '% Done.' + 'Now publishing ' + rawConfigs[1].pageSettings[i].PageName + ' page.';
+                    // loadingText = ((i / rawConfigs[1].pageSettings.length) * 100).toFixed(0) + '% Done.' + 'Now publishing ' + rawConfigs[1].pageSettings[i].PageName + ' page.';
                 let tophead = '';
                 let endhead = '';
                 let topbody = '';
@@ -296,10 +307,11 @@ function getJobs() {
                 contentpartials = contentpartials.data
                 let backlayoutdata = (layoutdata);
                 let newFolderName = folderUrl + '/temp';
+                let destPath = websitePath + job.userId + job.Websiteid + '/public';
                 await axios.post(config.baseURL + '/save-menu', {
                         foldername: newFolderName,
                         type: 'folder'
-                    }).then(async (res) => {
+                    }).then(async(res) => {
                         for (let p = 0; p < back_partials.length; p++) {
                             let responsepartials = await axios.get(config.baseURL + '/save-menu/0?path=' + folderUrl + '/Partials/' + Object.keys(back_partials[p]) + '/' + back_partials[p][Object.keys(back_partials[p])] + '.partial').catch((err) => {
                                 console.log(err);
@@ -434,7 +446,7 @@ function getJobs() {
                         console.log(e)
                     })
 
-                responseMetal = "var Metalsmith=require('" + config.metalpath + "metalsmith');\nvar markdown=require('" + config.metalpath + "metalsmith-markdown');\nvar layouts=require('" + config.metalpath + "metalsmith-layouts');\nvar permalinks=require('" + config.metalpath + "metalsmith-permalinks');\nvar inPlace = require('" + config.metalpath + "metalsmith-in-place')\nvar fs=require('" + config.metalpath + "file-system');\nvar Handlebars=require('" + config.metalpath + "handlebars');\n Metalsmith(__dirname)\n.metadata({\ntitle: \"Demo Title\",\ndescription: \"Some Description\",\ngenerator: \"Metalsmith\",\nurl: \"http://www.metalsmith.io/\"})\n.source('')\n.destination('" + rawConfigs[0].repoSettings[0].BaseURL + "/public')\n.clean(false)\n.use(markdown())\n.use(inPlace(true))\n.use(layouts({engine:'handlebars',directory:'" + folderUrl + "/Layout'}))\n.build(function(err,files)\n{if(err){\nconsole.log(err)\n}});"
+                responseMetal = "var Metalsmith=require('" + config.metalpath + "metalsmith');\nvar markdown=require('" + config.metalpath + "metalsmith-markdown');\nvar layouts=require('" + config.metalpath + "metalsmith-layouts');\nvar permalinks=require('" + config.metalpath + "metalsmith-permalinks');\nvar inPlace = require('" + config.metalpath + "metalsmith-in-place')\nvar fs=require('" + config.metalpath + "file-system');\nvar Handlebars=require('" + config.metalpath + "handlebars');\n Metalsmith(__dirname)\n.metadata({\ntitle: \"Demo Title\",\ndescription: \"Some Description\",\ngenerator: \"Metalsmith\",\nurl: \"http://www.metalsmith.io/\"})\n.source('')\n.destination('" + destPath + "')\n.clean(false)\n.use(markdown())\n.use(inPlace(true))\n.use(layouts({engine:'handlebars',directory:'" + folderUrl + "/Layout'}))\n.build(function(err,files)\n{if(err){\nconsole.log(err)\n}});"
 
                 backupMetalSmith = (responseMetal);
 
@@ -457,11 +469,11 @@ function getJobs() {
                     }
                     let obj = {}
                     let key = Object.keys(partialsPage[j])[0] + '_' + partialsPage[j][Object.keys(partialsPage[j])[0]]
-                    //// console.log('key:',key)
-                    //// console.log('partialsPage:',partialsPage[j][Object.keys(partialsPage[j])[0]])
+                        //// console.log('key:',key)
+                        //// console.log('partialsPage:',partialsPage[j][Object.keys(partialsPage[j])[0]])
                     obj[key] = partialsPage[j][Object.keys(partialsPage[j])[0]]
-                    // partialsPage[j] = []
-                    // partialsPage[j] = obj
+                        // partialsPage[j] = []
+                        // partialsPage[j] = obj
                     partialtemp[j] = obj;
 
 
@@ -488,7 +500,7 @@ function getJobs() {
                         filename: mainMetal,
                         text: responseMetal,
                         type: 'file'
-                    }).then(async (response) => {
+                    }).then(async(response) => {
                         let vueBodyStart = '';
                         let vueBodyEnd = ''
                         let newFolderName1 = folderUrl + '/Preview';
@@ -496,7 +508,7 @@ function getJobs() {
                                 foldername: newFolderName1,
                                 type: 'folder'
                             })
-                            .then(async (res) => {
+                            .then(async(res) => {
                                 //console.log(res);
                                 let datadivscript = ''
                                 let divappstart = ''
@@ -555,21 +567,21 @@ function getJobs() {
                                         text: rawContent,
                                         type: 'file'
                                     })
-                                    .then(async (res) => {
+                                    .then(async(res) => {
                                         // this.saveFileLoading = false;
 
-                                        await axios.get(config.baseURL + '/metalsmith-publish?path=' + folderUrl, {}).then(async (response) => {
+                                        await axios.get(config.baseURL + '/metalsmith-publish?path=' + folderUrl, {}).then(async(response) => {
                                                 await axios.post(config.baseURL + '/save-menu', {
                                                         filename: mainMetal,
                                                         text: backupMetalSmith,
                                                         type: 'file'
                                                     })
-                                                    .then(async (res) => {
+                                                    .then(async(res) => {
                                                         // var previewFile = this.$store.state.fileUrl.replace(/\\/g, "\/");
                                                         // previewFile = folderUrl.replace('/var/www/html', '');
 
                                                         await axios.delete(config.baseURL + '/save-menu/0?filename=' + folderUrl + '/Preview')
-                                                            .then(async (res) => {
+                                                            .then(async(res) => {
                                                                 await axios.delete(config.baseURL + '/save-menu/0?filename=' + folderUrl + '/temp').catch((e) => {
                                                                     console.log(e)
                                                                 })
@@ -594,7 +606,7 @@ function getJobs() {
                                                                     await axios.delete(config.baseURL + '/save-menu/0?filename=' + folderUrl + '/Layout/Blank.layout')
                                                                         .catch((e) => {
                                                                             console.log(e)
-                                                                            //console.log("error while deleting blank.layout file")
+                                                                                //console.log("error while deleting blank.layout file")
                                                                         })
                                                                 }
 
@@ -703,16 +715,16 @@ function getJobs() {
                     console.log(e)
                 })
             if (check != false) {
-              // console.log('####################################',rawConfigs[0].repoSettings[0].BaseURL + '/public/log.md')
-              await axios.post(config.baseURL + '/save-menu', {
-                  filename: rawConfigs[0].repoSettings[0].BaseURL + '/public/log.md' ,
-                  text:'# Welcome to Log File!\n'+JSON.stringify(job.log, null, 4),
-                  type: 'file'
-              }).catch((e) => {
-                  console.log(e)
-              })
-              await commitProject(job.websitejobqueuedata.RepojsonData);
-            } 
+                // console.log('####################################',rawConfigs[0].repoSettings[0].BaseURL + '/public/log.md')
+                await axios.post(config.baseURL + '/save-menu', {
+                    filename: rawConfigs[0].repoSettings[0].BaseURL + '/public/log.md',
+                    text: '# Welcome to Log File!\n' + JSON.stringify(job.log, null, 4),
+                    type: 'file'
+                }).catch((e) => {
+                    console.log(e)
+                })
+                await commitProject(job.websitejobqueuedata.RepojsonData);
+            }
             return next()
         } catch (err) {
             console.error(err)
@@ -720,7 +732,7 @@ function getJobs() {
         }
 
     })
-    q.on('completed', async (queueId, jobId, isRepeating) => {
+    q.on('completed', async(queueId, jobId, isRepeating) => {
         // console.log('Processing Queue: ' + queueId)
 
         if (!iscancelled) {
@@ -728,7 +740,7 @@ function getJobs() {
             await axios.patch(config.baseURL + '/jobqueue', {
                 'Status': 'completed',
                 'websiteName': websitename,
-                'websiteid':websiteid
+                'websiteid': websiteid
             }).catch((e) => {
                 console.log(e)
             })
@@ -741,38 +753,38 @@ function getJobs() {
         console.log('Queue Id: ' + err.queueId)
         console.error(err)
     })
-    q.on('failed', async (queueId, jobId) => {
+    q.on('failed', async(queueId, jobId) => {
         console.log('Job failed: ' + jobId)
         await axios.patch(config.baseURL + '/jobqueue', {
             'Status': 'failed',
             'websiteName': websitename,
-            'websiteid':websiteid
+            'websiteid': websiteid
         }).catch((e) => {
             console.log(e)
         })
     })
 
-    q.on('progress', async (queueId, jobId, percent) => {
+    q.on('progress', async(queueId, jobId, percent) => {
 
         // console.log('Job progress: ' + percent)
 
         if (!iscancelled) {
-        await axios.patch(config.baseURL + '/jobqueue', {
-            'Percentage': percent,
-            'websiteName': websitename,
-            'websiteid':websiteid
-        }).catch((e) => {
-            console.log(e)
-        })
-      }
+            await axios.patch(config.baseURL + '/jobqueue', {
+                'Percentage': percent,
+                'websiteName': websitename,
+                'websiteid': websiteid
+            }).catch((e) => {
+                console.log(e)
+            })
+        }
     })
-    q.on('cancelled', async (queueId, jobId) => {
+    q.on('cancelled', async(queueId, jobId) => {
         console.log('Job cancelled: ' + jobId)
         iscancelled = true;
         await axios.patch(config.baseURL + '/jobqueue', {
             'Status': 'cancelled',
             'websiteName': websitename,
-            'websiteid':websiteid
+            'websiteid': websiteid
         }).catch((e) => {
             console.log(e)
         })
@@ -886,7 +898,7 @@ async function commitProject(commitForm) {
         } else {
             // If first commit was unsuccessfull
             console.log('else')
-            // add new repo to git
+                // add new repo to git
             let gitResponse = await axios.get(config.baseURL + '/gitlab-add-repo?nameOfRepo=' + commitForm.id + '&userDetailId=' + commitForm.userId, {}).catch((err) => {
                 console.log(err);
                 // this.fullscreenLoading = false
