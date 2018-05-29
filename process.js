@@ -26,13 +26,13 @@ let websitename;
 let websiteid;
 let iscancelled
 let logfile = '';
-
+let userId;
 function getJobs() {
 
     q.process(async(job, next, onCancel) => {
 
         try {
-            // job['userId'] = job.userId;
+            userId=job.userId;
             logfile = '#######################################################################\n\nPublish starting for Website:' + job.websitejobqueuedata.RepojsonData.websiteName + '\n\nuserID:' + job.websitejobqueuedata.RepojsonData.userId + '\n\nStarting Publish...\n'
             websitename = job.websitejobqueuedata.RepojsonData.websiteName;
             websiteid = job.websitejobqueuedata.RepojsonData.id
@@ -745,7 +745,8 @@ function getJobs() {
             await axios.patch(config.baseURL + '/jobqueue', {
                 'Status': 'completed',
                 'websiteName': websitename,
-                'websiteid': websiteid
+                'websiteid': websiteid,
+                'userId':userId
             }).catch((e) => {
                 console.log(e)
             })
@@ -763,7 +764,8 @@ function getJobs() {
         await axios.patch(config.baseURL + '/jobqueue', {
             'Status': 'failed',
             'websiteName': websitename,
-            'websiteid': websiteid
+            'websiteid': websiteid,
+            'userId':userId
         }).catch((e) => {
             console.log(e)
         })
@@ -777,7 +779,8 @@ function getJobs() {
             await axios.patch(config.baseURL + '/jobqueue', {
                 'Percentage': percent,
                 'websiteName': websitename,
-                'websiteid': websiteid
+                'websiteid': websiteid,
+                'userId':userId
             }).catch((e) => {
                 console.log(e)
             })
@@ -789,7 +792,8 @@ function getJobs() {
         await axios.patch(config.baseURL + '/jobqueue', {
             'Status': 'cancelled',
             'websiteName': websitename,
-            'websiteid': websiteid
+            'websiteid': websiteid,
+            'userId':userId
         }).catch((e) => {
             console.log(e)
         })
