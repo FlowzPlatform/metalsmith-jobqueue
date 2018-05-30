@@ -728,7 +728,7 @@ function getJobs() {
                 }).catch((e) => {
                     console.log(e)
                 })
-                await commitProject(job.websitejobqueuedata.RepojsonData);
+                // await commitProject(job.websitejobqueuedata.RepojsonData);
             }
             return next()
         } catch (err) {
