@@ -1,0 +1,66 @@
+sudo: required
+
+language: node
+
+services:
+  - docker
+
+branches:
+  only:
+  - master
+  - develop
+  - staging
+  - QA
+
+
+
+jobs:
+  include:
+    - stage: metalsmith-jobqueue
+      script:
+      - 'if [ ${TRAVIS_BRANCH} = "master" ]; then
+            docker login -u="$DOCKER_USERNAME_FLOWZ" -p="$DOCKER_PASSWORD_FLOWZ";
+            docker build -t metalsmith_jobqueue_flowz:latest .;
+            docker images;
+            docker tag metalsmith_jobqueue_flowz:latest $DOCKER_USERNAME_FLOWZ/metalsmith_jobqueue_flowz:latest;
+            docker push $DOCKER_USERNAME_FLOWZ/metalsmith_jobqueue_flowz:latest;
+        elif [ ${TRAVIS_BRANCH} = "develop" ]; then
+            docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
+            docker build -t metalsmith_jobqueue_flowz:dev .;
+            docker images;
+            docker tag metalsmith_jobqueue_flowz:dev $DOCKER_USERNAME/metalsmith_jobqueue_flowz:dev;
+            docker push $DOCKER_USERNAME/metalsmith_jobqueue_flowz:dev;
+        elif [ ${TRAVIS_BRANCH} = "staging" ]; then
+            docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
+            docker build -t metalsmith_jobqueue_flowz:$TRAVIS_BRANCH-$TRAVIS_BUILD_NUMBER .;
+            docker tag metalsmith_jobqueue_flowz:$TRAVIS_BRANCH-$TRAVIS_BUILD_NUMBER $DOCKER_USERNAME/metalsmith_jobqueue_flowz:$TRAVIS_BRANCH-$TRAVIS_BUILD_NUMBER;
+            docker tag metalsmith_jobqueue_flowz:$TRAVIS_BRANCH-$TRAVIS_BUILD_NUMBER $DOCKER_USERNAME/metalsmith_jobqueue_flowz:staging;
+            docker images;
+            docker push $DOCKER_USERNAME/metalsmith_jobqueue_flowz:$TRAVIS_BRANCH-$TRAVIS_BUILD_NUMBER;
+            docker push $DOCKER_USERNAME/metalsmith_jobqueue_flowz:staging;
+        else
+            docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
+            docker build -t metalsmith_jobqueue_flowz:qa .;
+            docker images;
+            docker tag metalsmith_jobqueue_flowz:qa $DOCKER_USERNAME/metalsmith_jobqueue_flowz:qa;
+            docker push $DOCKER_USERNAME/metalsmith_jobqueue_flowz:qa;
+        fi'
+    - stage: Upgrade Rancher Service
+      script:
+      - bash ./upgrade.sh
+    - stage: Finish Rancher Service
+      script:
+      - bash ./finish.sh
+
+notifications:
+  email:
+    recipients:
+      - arpitap@officebeacon.com
+      - kaushalm@officebrain.com
+      - anuj@officebrain.com
+      - naveeng@officebrain.com
+      - chirag@officebrain.com
+      - fsaiyed@officebrain.com
+      - gkumar@officebrain.com
+    on_success: always
+    on_failure: always
