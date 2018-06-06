@@ -11,7 +11,7 @@ const cxnOptions = {
     port: process.env.RDB_PORT,
     db: 'JobQueue' // The name of the database in RethinkDB
 }
-
+let d = new Date();
 const webRootPath = process.env.webRootPath;
 //console.log('====' + webRootPath);
 const metalSourcePath = webRootPath + 'node_modules/';
@@ -33,7 +33,7 @@ function getJobs() {
 
         try {
             userId=job.userId;
-            logfile = '#######################################################################\n\nPublish starting for Website:' + job.websitejobqueuedata.RepojsonData.websiteName + '\n\nuserID:' + job.websitejobqueuedata.RepojsonData.userId + '\n\nStarting Publish...\n'
+            logfile = '\n\n#######################################################################\n\n\t'+"["+d+"]:-"+'Publish starting for Website:' + job.websitejobqueuedata.RepojsonData.websiteName + '\n\n\t'+"["+d+"]:-"+'userID:' + job.websitejobqueuedata.RepojsonData.userId + '\n\n\t'+"["+d+"]:-"+'Starting Publish...\n'
             websitename = job.websitejobqueuedata.RepojsonData.websiteName;
             websiteid = job.websitejobqueuedata.RepojsonData.id
             iscancelled = false;
@@ -97,11 +97,12 @@ function getJobs() {
                 }
             };
             let loadingText
-            logfile = logfile + '\nNumber of pages to Publish :' + rawConfigs[1].pageSettings.length
+            logfile = logfile + '\n\t'+"["+d+"]:-"+'Number of pages to Publish :' + rawConfigs[1].pageSettings.length
             for (let i = 0; i < rawConfigs[1].pageSettings.length; i++) {
-                logfile = logfile + '\n\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n'
+                logfile = logfile + '\n\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n'
                 if (check == false) {
                     console.log('cancelling current')
+                    logfile = logfile + '\n\t'+"["+d+"]:-"+'Cancelling Publish'
                     break
                     // return next()
                 }
@@ -199,9 +200,8 @@ function getJobs() {
                 let pageexternalJs = [];
                 let pageexternalCss = [];
                 let pageMetaInfo = [];
-
                 let PageMetacharset = '';
-                logfile = logfile + '\nCurrently: ' + nameF + '\n'
+                logfile = logfile + '\n\t'+"["+d+"]:-"+'File name: ' + nameF +'.html'+ '\n'
                 Layout = rawSettings[1].pageSettings[i].PageLayout
                 partialsPage = rawSettings[1].pageSettings[i].partials
                 let back_partials = (partialsPage);
@@ -298,7 +298,7 @@ function getJobs() {
                     // this.fullscreenLoading = false
                 });
                 let responseMetal = '';
-                logfile = logfile + '\n-Preparing Metalsmith Config file ...\n'
+                logfile = logfile + '\n\t'+"["+d+"]:-"+'Preparing Metalsmith Config file ...\n'
                 let backupMetalSmith = '';
 
                 let contentpartials = await axios.get(config.baseURL + '/save-menu/0?path=' + folderUrl + '/Pages/' + nameF + '.html').catch((err) => {
@@ -446,6 +446,8 @@ function getJobs() {
                     })
                     .catch((e) => {
                         console.log(e)
+                    logfile = logfile + '\n\t'+"["+d+"]:-"+'Error:'+e
+
                     })
 
                 responseMetal = "var Metalsmith=require('" + config.metalpath + "metalsmith');\nvar markdown=require('" + config.metalpath + "metalsmith-markdown');\nvar layouts=require('" + config.metalpath + "metalsmith-layouts');\nvar permalinks=require('" + config.metalpath + "metalsmith-permalinks');\nvar inPlace = require('" + config.metalpath + "metalsmith-in-place')\nvar fs=require('" + config.metalpath + "file-system');\nvar Handlebars=require('" + config.metalpath + "handlebars');\n Metalsmith(__dirname)\n.metadata({\ntitle: \"Demo Title\",\ndescription: \"Some Description\",\ngenerator: \"Metalsmith\",\nurl: \"http://www.metalsmith.io/\"})\n.source('')\n.destination('" + destPath + "')\n.clean(false)\n.use(markdown())\n.use(inPlace(true))\n.use(layouts({engine:'handlebars',directory:'" + folderUrl + "/Layout'}))\n.build(function(err,files)\n{if(err){\nconsole.log(err)\n}});"
@@ -496,7 +498,7 @@ function getJobs() {
 
                 responseMetal = responseMetal.substr(0, indexPartial + 14) + partials + responseMetal.substr(indexPartial + 14);
                 // console.log('final responseMetal:', responseMetal)
-                logfile = logfile + '\n-Done Preparing Metalsmith File. Now, Gathering required files ...\n'
+                logfile = logfile + '\n\t'+"["+d+"]:-"+'Done Preparing Metalsmith File. Now, Gathering required files ...\n'
                 let mainMetal = folderUrl + '/public/assets/metalsmithPublish.js'
                 let value = true;
                 await axios.post(config.baseURL + '/save-menu', {
@@ -580,7 +582,7 @@ function getJobs() {
                                                         type: 'file'
                                                     })
                                                     .then(async(res) => {
-                                                        logfile = logfile + '\n-Successfully file published.'
+                                                        logfile = logfile + '\n\t'+"["+d+"]:-"+'Successfully file published.'
                                                             // var previewFile = this.$store.state.fileUrl.replace(/\\/g, "\/");
                                                             // previewFile = folderUrl.replace('/var/www/html', '');
 
@@ -719,7 +721,7 @@ function getJobs() {
                     console.log(e)
                 })
             if (check != false) {
-                logfile = logfile + '\n\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\nAll Pages Published.\n\n#######################################################################'
+                logfile = logfile + '\n\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n\n\t\t\tAll Pages Published.'
                     // console.log('####################################',rawConfigs[0].repoSettings[0].BaseURL + '/public/log.md')
                 await axios.post(config.baseURL + '/save-menu', {
                     filename: rawConfigs[0].repoSettings[0].BaseURL + '/public/log.md',
@@ -777,6 +779,7 @@ function getJobs() {
 
         if (!iscancelled) {
             await axios.patch(config.baseURL + '/jobqueue', {
+                'Status': 'progress',
                 'Percentage': percent,
                 'websiteName': websitename,
                 'websiteid': websiteid,
@@ -799,199 +802,5 @@ function getJobs() {
         })
     })
 }
-async function commitProject(commitForm) {
-    //Here commitForm is containing rethinkdata from jobqueue. 
-    let settings = commitForm.configData;
-    // this.$refs[commitForm].validate(async (valid) => {
-    //   if (valid) {
-    let dt = new Date();
-    let utcDate = dt.toUTCString();
-    let branchesData
-    await axios.get(config.baseURL + '/branch-list/' + settings[0].repoSettings[0].RepositoryId, {}).then(response => {
-        branchesData = [];
-        for (let i in response.data) {
-            branchesData.push({
-                commitDate: response.data[i].commit.created_at,
-                branchName: response.data[i].name,
-                commitSHA: response.data[i].commit.id,
-                commitsMessage: response.data[i].commit.title,
-            });
-        }
-    }).catch(error => {
-        console.log(error);
 
-    });
-    let branchName = 'Publish_' + Math.round(new Date().getTime() / 1000);
-
-    let commitMessage = 'Publish - ' + utcDate;
-    let self = this;
-
-    // Check if branch exist
-    let indexOfBranchName = _.findIndex(branchesData, function(o) {
-        return o.branchName == branchName;
-    });
-
-    // If branchName is different
-    if (indexOfBranchName == -1) {
-        // If .git was successfull
-        if (settings[0].repoSettings[0].RepositoryId != undefined) {
-            // this.isCommitLoading = true;
-            // this.$store.state.currentIndex = 0;
-
-            // Push repository changes
-            await axios.post(config.baseURL + '/gitlab-add-repo', {
-                branchName: branchName,
-                commitMessage: commitMessage,
-                repoName: commitForm.id,
-                userDetailId: commitForm.userId
-            }).then(async response => {
-
-                // console.log('Response after bracnh commit : ', response);
-
-                if (response.status == 200 || response.status == 201) {
-
-                    await axios.get(config.baseURL + '/commit-service?projectId=' + settings[0].repoSettings[0].RepositoryId, {}).then(async response => {
-
-                        let commitsData = [];
-                        for (let i in response.data) {
-                            commitsData.push({
-                                commitDate: response.data[i].created_at,
-                                commitSHA: response.data[i].id,
-                                commitsMessage: response.data[i].title,
-                            });
-                        }
-
-                        // let lastCommit = (response.data.length) - 1;
-
-                        // console.log('Last Commit SHA: ', response.data[lastCommit].id);
-
-                        // this.settings[0].repoSettings[0].CurrentHeadSHA = response.data[lastCommit].id;
-                        // this.currentSha = response.data[lastCommit].id;
-
-                        settings[0].repoSettings[0].CurrentBranch = branchName;
-
-                        // Create entry in configdata-history table
-                        await axios.post(config.baseURL + '/configdata-history', {
-                                configData: settings,
-                                currentBranch: branchName,
-                                commitSHA: settings[0].repoSettings[0].CurrentHeadSHA,
-                                websiteName: commitForm.id,
-                                userId: commitForm.userId
-                            })
-                            .then(function(resp) {
-                                // console.log('Config revision saved in configdata-history. ', resp);
-                            })
-                            .catch(function(error) {
-                                console.log(error);
-                            });
-
-                        // this.saveProjectSettings();
-                    }).catch(error => {
-                        console.log("error : ", error);
-                        // this.fullscreenLoading = false;
-                    });
-
-                    commitMessage = '';
-                    branchName = '';
-                    //console.log(response.data);
-                    // this.$message({
-                    //     message: 'New revision commited. ',
-                    //     type: 'success'
-                    // });
-                    // this.isCommitLoading = false;
-                    // await this.init();
-                }
-            }).catch(error => {
-                console.log("error : ", error);
-            })
-        } else {
-            // If first commit was unsuccessfull
-            console.log('else')
-                // add new repo to git
-            let gitResponse = await axios.get(config.baseURL + '/gitlab-add-repo?nameOfRepo=' + commitForm.id + '&userDetailId=' + commitForm.userId, {}).catch((err) => {
-                console.log(err);
-                // this.fullscreenLoading = false
-            });
-
-            if (!(gitResponse.data.statusCode)) {
-                // this.isCommitLoading = true;
-                // this.$store.state.currentIndex = 0;
-
-                // Push repository changes
-                await axios.post(config.baseURL + '/gitlab-add-repo', {
-                    branchName: branchName,
-                    commitMessage: commitMessage,
-                    repoName: commitForm.id,
-                    userDetailId: commitForm.userId
-                }).then(async response => {
-
-                    if (response.status == 200 || response.status == 201) {
-
-                        await axios.get(config.baseURL + '/commit-service?projectId=' + commitForm.userId, {}).then(async resp => {
-                            let commitsData = [];
-                            for (let i in resp.data) {
-                                commitsData.push({
-                                    commitDate: resp.data[i].created_at,
-                                    commitSHA: resp.data[i].id,
-                                    commitsMessage: resp.data[i].title,
-                                });
-                            }
-
-                            // let lastCommit = (response.data.length) - 1;
-
-                            // console.log('Last Commit SHA: ', response.data[lastCommit].id);
-
-                            // this.settings[0].repoSettings[0].CurrentHeadSHA = response.data[lastCommit].id;
-                            // this.currentSha = response.data[lastCommit].id;
-
-                            settings[0].repoSettings[0].CurrentBranch = branchName;
-
-                            // Create entry in configdata-history table
-                            await axios.post(config.baseURL + '/configdata-history', {
-                                    configData: settings,
-                                    currentBranch: branchName,
-                                    commitSHA: settings[0].repoSettings[0].CurrentHeadSHA,
-                                    websiteName: this.repoName,
-                                    userId: commitForm.userId
-                                })
-                                .then(function(resp) {
-                                    console.log('Config revision saved in configdata-history. ', resp);
-                                })
-                                .catch(function(error) {
-                                    console.log(error);
-                                });
-
-                            this.saveProjectSettings();
-                        }).catch(error => {
-                            console.log(error);
-                            // this.fullscreenLoading = false;
-                        });
-
-                        commitMessage = '';
-                        branchName = '';
-
-                        //console.log(response.data);
-                        // this.$message({
-                        //     message: 'New revision commited. ',
-                        //     type: 'success'
-                        // });
-                        // this.isCommitLoading = false;
-                        // this.init();
-                    }
-                }).catch(error => {
-                    console.log("Some error occured: ", error);
-                })
-            } else {
-                console.log('Error occured while commiting your changes. ', gitResponse);
-            }
-        }
-    } else {
-        console.log('Branch already exist.');
-        // this.$swal({
-        //     text: 'Branch with name "' + branchName + '" already exists! Please try different name.',
-        //     type: 'warning',
-        // })
-        return false;
-    }
-}
 getJobs()
