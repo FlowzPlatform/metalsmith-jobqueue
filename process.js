@@ -213,6 +213,7 @@ function getJobs() {
                 PageMetacharset = rawSettings[1].pageSettings[i].PageMetacharset;
                 pagescripts = rawSettings[1].pageSettings[i].PageScripts;
                 pagestyles = rawSettings[1].pageSettings[i].PageStyles;
+                PageCss = rawSettings[1].pageSettings[i].PageCss;
 
                 if (pageSeoTitle != undefined && pageSeoTitle != '') {
                     SeoTitle = pageSeoTitle
@@ -518,21 +519,51 @@ function getJobs() {
                                 let datadivscript = ''
                                 let divappstart = ''
                                 let divappend = ''
-                                if (contentpartials.indexOf('datafieldgroup') > 0) {
-                                    datadivscript = "<script type='text/javascript' src='https://cdn.jsdelivr.net/web-animations/latest/web-animations.min.js'><\/script>\n" +
-                                        "<script type='text/javascript' src='https://hammerjs.github.io/dist/hammer.min.js'><\/script>\n" +
-                                        "<script type='text/javascript' src='https://cdnjs.cloudflare.com/ajax/libs/muuri/0.5.3/muuri.min.js'><\/script>\n" +
-                                        "<script type='text/javascript' src='https://unpkg.com/vue/dist/vue.js'><\/script>\n"
-                                    divappstart = '<div id="app">'
-                                    divappend = '</div>'
-                                }
+                                let dfscript = ''
+                                // if (contentpartials.indexOf('datafieldgroup') > 0) {
+                                //     datadivscript = "<script type='text/javascript' src='https://cdn.jsdelivr.net/web-animations/latest/web-animations.min.js'><\/script>\n" +
+                                //         "<script type='text/javascript' src='https://hammerjs.github.io/dist/hammer.min.js'><\/script>\n" +
+                                //         "<script type='text/javascript' src='https://cdnjs.cloudflare.com/ajax/libs/muuri/0.5.3/muuri.min.js'><\/script>\n" +
+                                //         "<script type='text/javascript' src='https://unpkg.com/vue/dist/vue.js'><\/script>\n"
+                                //     divappstart = '<div id="app">'
+                                //     divappend = '</div>'
+                                // }
+
+                                if (PageCss == 'VueSearchJS') {
+                                divappstart   = '<div id="app">'
+                                divappend     = '</div>'
+                                dfscript      = "<script type='text/javascript' src='https://unpkg.com/vue/dist/vue.js'><\/script>\n" 
+                                                + "<link rel='stylesheet' type='text/css' href='https://res.cloudinary.com/flowz/raw/upload/v1526901609/component-base.css'>\n"
+                                                + '<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.5/lodash.min.js"><\/script>\n'
+                                                + '<script src="https://unpkg.com/vuejs-paginate@1.9.0/dist/index.js"><\/script>\n'
+                                                + '<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">'
+                                                + '<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"><\/script>'
+                                                + '<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery.lazy/1.7.8/jquery.lazy.min.js"><\/script>\n'
+                                                + '<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery.lazy/1.7.8/jquery.lazy.plugins.min.js"><\/script>\n'
+                                                + '<script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"><\/script>\n'
+                                                + '<script src="./../assets/client-plugins/vuelastic.js"><\/script>'
+                              }
+
+                              if (PageCss == 'VueDataJS') {
+                                divappstart   = '<div id="app">'
+                                divappend     = '</div>'
+                                dfscript      = "<script type='text/javascript' src='https://unpkg.com/vue/dist/vue.js'><\/script>\n" 
+                                                + "<script type='text/javascript' src='https://cdn.jsdelivr.net/web-animations/latest/web-animations.min.js'><\/script>\n"
+                                                + "<script type='text/javascript' src='https://hammerjs.github.io/dist/hammer.min.js'><\/script>\n"
+                                                + "<script type='text/javascript' src='https://cdnjs.cloudflare.com/ajax/libs/muuri/0.5.3/muuri.min.js'><\/script>\n"
+                                                + "<link rel='stylesheet' type='text/css' href='https://res.cloudinary.com/flowz/raw/upload/v1526901609/component-base.css'>\n"
+                                                + "<script type='text/javascript' src='https://unpkg.com/vue/dist/vue.js'><\/script>"
+                                                + '<script src="https://unpkg.com/iview/dist/iview.min.js"><\/script>'
+                                                + '<link rel="stylesheet" href="https://unpkg.com/iview/dist/styles/iview.css">'
+                                                + "<script type='text/javascript' src='https://res.cloudinary.com/flowz/raw/upload/v1519124435/builder/js/vuecomponent.js'><\/script>"
+                              }
 
                                 let newContent = "<html>\n<head>\n" + tophead +
                                     "<title>" + SeoTitle + "</title>\n" + favicon + '\n' +
                                     '<script src="https://code.jquery.com/jquery-3.3.1.min.js"><\/script>\n' +
                                     "<link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/themes/base/theme.min.css' />\n" +
+                                    '<link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">\n' +
                                     "<link rel='stylesheet' href='./main-files/main.css'/>\n" +
-                                    datadivscript +
                                     endhead + "\n</head>\n<body>\n" + divappstart +
                                     topbody + layoutdata.data +
                                     '\n' + divappend +
@@ -542,7 +573,7 @@ function getJobs() {
                                     '<script src="./assets/client-plugins/flowz-builder-engine.js"><\/script>\n' +
                                     '<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.17.1/axios.js"><\/script>\n' +
                                     '\n<script src="./assets/client-plugins/global-variables-plugin.js"><\/script>\n' +
-                                    endbody +
+                                    endbody + dfscript +
                                     '\n</body>\n</html>';
 
                                 // console.log('folderUrl:',folderUrl)
