@@ -3,8 +3,8 @@ const axios = require('axios')
 const jsonformat = require('json-format')
 const _ = require('lodash');
 const qOptions = {
-    name: 'Metalsmith'
-        // concurrency: 5 // The queue and table name
+    name: 'Metalsmith',
+    // concurrency: 5 // The queue and table name
 }
 const cxnOptions = {
     host: process.env.RDB_HOST,
@@ -24,7 +24,6 @@ let config;
 
 let websitename;
 let websiteid;
-let iscancelled
 let logfile = '';
 let userId;
 function getJobs() {
@@ -32,15 +31,15 @@ function getJobs() {
     q.process(async(job, next, onCancel) => {
 
         try {
+            console.log('starting job:',job.id)
             userId=job.userId;
             logfile = '\n\n#######################################################################\n\n\t'+"["+d+"]:-"+'Publish starting for Website:' + job.websitejobqueuedata.RepojsonData.websiteName + '\n\n\t'+"["+d+"]:-"+'userID:' + job.websitejobqueuedata.RepojsonData.userId + '\n\n\t'+"["+d+"]:-"+'Starting Publish...\n'
             websitename = job.websitejobqueuedata.RepojsonData.websiteName;
             websiteid = job.websitejobqueuedata.RepojsonData.id
-            iscancelled = false;
-            let check = true;
+            let checkcancel = true;
             onCancel(job, () => {
                     // Gracefully stop your job here\
-                    check = false;
+                    checkcancel = false;
                 })
                 // Do something with your result
             responseConfig = job.websitejobqueuedata.RepojsonData
@@ -100,14 +99,25 @@ function getJobs() {
             logfile = logfile + '\n\t'+"["+d+"]:-"+'Number of pages to Publish :' + rawConfigs[1].pageSettings.length
             for (let i = 0; i < rawConfigs[1].pageSettings.length; i++) {
                 logfile = logfile + '\n\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n'
-                if (check == false) {
-                    console.log('cancelling current')
+                if (checkcancel == false) {
+                    // console.log('cancelling current')
                     logfile = logfile + '\n\t'+"["+d+"]:-"+'Cancelling Publish'
                     break
                     // return next()
                 }
-                job.updateProgress(Math.ceil(((i + 1) / rawConfigs[1].pageSettings.length) * 100)).catch(err => console.error(err))
-                    // loadingText = ((i / rawConfigs[1].pageSettings.length) * 100).toFixed(0) + '% Done.' + 'Now publishing ' + rawConfigs[1].pageSettings[i].PageName + ' page.';
+                loadingText=''
+                // job.updateProgress(Math.ceil(((i + 1) / rawConfigs[1].pageSettings.length) * 100)).catch(err => console.error(err))
+                // loadingText = ((i / rawConfigs[1].pageSettings.length) * 100).toFixed(0) + '% Done.' + 'Now publishing ' + rawConfigs[1].pageSettings[i].PageName + ' page.';
+                loadingText=Math.ceil(((i + 1) / rawConfigs[1].pageSettings.length) * 100)
+                await axios.patch(config.baseURL + '/jobqueue', {
+                    'Status': 'progress',
+                    'Percentage': loadingText,
+                    'websiteName': websitename,
+                    'websiteid': websiteid,
+                    'userId':userId
+                }).catch((e) => {
+                    console.log(e)
+                })
                 let tophead = '';
                 let endhead = '';
                 let topbody = '';
@@ -751,7 +761,7 @@ function getJobs() {
                 .catch((e) => {
                     console.log(e)
                 })
-            if (check != false) {
+            if (checkcancel != false) {
                 logfile = logfile + '\n\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n\n\t\t\tAll Pages Published.'
                     // console.log('####################################',rawConfigs[0].repoSettings[0].BaseURL + '/public/log.md')
                 await axios.post(config.baseURL + '/save-menu', {
@@ -761,7 +771,31 @@ function getJobs() {
                 }).catch((e) => {
                     console.log(e)
                 })
-                // await commitProject(job.websitejobqueuedata.RepojsonData);
+
+                await axios.patch(config.baseURL + '/jobqueue', {
+                    'Status': 'completed',
+                    'websiteName': websitename,
+                    'websiteid': websiteid,
+                    'userId':userId
+                }).then((res)=>{
+                    console.log('job completed')
+                })
+                .catch((e) => {
+                    console.log(e)
+                })
+
+            }
+            else{
+                // console.log('Job cancelled: ' + jobId)
+                    checkcancel=true
+                    await axios.patch(config.baseURL + '/jobqueue', {
+                        'Status': 'cancelled',
+                        'websiteName': websitename,
+                        'websiteid': websiteid,
+                        'userId':userId
+                    }).catch((e) => {
+                        console.log(e)
+                    })
             }
             return next()
         } catch (err) {
@@ -770,24 +804,24 @@ function getJobs() {
         }
 
     })
-    q.on('completed', async(queueId, jobId, isRepeating) => {
-        // console.log('Processing Queue: ' + queueId)
+    // q.on('completed', async(queueId, jobId, isRepeating) => {
+    //     // console.log('Processing Queue: ' + queueId)
 
-        if (!iscancelled) {
-            console.log('Job completed: ' + jobId)
-            await axios.patch(config.baseURL + '/jobqueue', {
-                'Status': 'completed',
-                'websiteName': websitename,
-                'websiteid': websiteid,
-                'userId':userId
-            }).catch((e) => {
-                console.log(e)
-            })
-        }
+    //     if (!iscancelled) {
+    //         console.log('Job completed: ' + jobId)
+    //         await axios.patch(config.baseURL + '/jobqueue', {
+    //             'Status': 'completed',
+    //             'websiteName': websitename,
+    //             'websiteid': websiteid,
+    //             'userId':userId
+    //         }).catch((e) => {
+    //             console.log(e)
+    //         })
+    //     }
 
-        // console.log('Is job repeating: ' + isRepeating)
+    //     // console.log('Is job repeating: ' + isRepeating)
 
-    })
+    // })
     q.on('error', (err) => {
         console.log('Queue Id: ' + err.queueId)
         console.error(err)
@@ -804,33 +838,32 @@ function getJobs() {
         })
     })
 
-    q.on('progress', async(queueId, jobId, percent) => {
+    // q.on('progress', async(queueId, jobId, percent) => {
 
-        // console.log('Job progress: ' + percent)
+    //     // console.log('Job progress: ' + percent)
 
-        if (!iscancelled) {
-            await axios.patch(config.baseURL + '/jobqueue', {
-                'Status': 'progress',
-                'Percentage': percent,
-                'websiteName': websitename,
-                'websiteid': websiteid,
-                'userId':userId
-            }).catch((e) => {
-                console.log(e)
-            })
-        }
-    })
+    //     if (!iscancelled) {
+    //         await axios.patch(config.baseURL + '/jobqueue', {
+    //             'Status': 'progress',
+    //             'Percentage': percent,
+    //             'websiteName': websitename,
+    //             'websiteid': websiteid,
+    //             'userId':userId
+    //         }).catch((e) => {
+    //             console.log(e)
+    //         })
+    //     }
+    // })
     q.on('cancelled', async(queueId, jobId) => {
         console.log('Job cancelled: ' + jobId)
-        iscancelled = true;
-        await axios.patch(config.baseURL + '/jobqueue', {
-            'Status': 'cancelled',
-            'websiteName': websitename,
-            'websiteid': websiteid,
-            'userId':userId
-        }).catch((e) => {
-            console.log(e)
-        })
+        // await axios.patch(config.baseURL + '/jobqueue', {
+        //     'Status': 'cancelled',
+        //     'websiteName': websitename,
+        //     'websiteid': websiteid,
+        //     'userId':userId
+        // }).catch((e) => {
+        //     console.log(e)
+        // })
     })
 }
 
