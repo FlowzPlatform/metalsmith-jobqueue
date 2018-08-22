@@ -2,6 +2,7 @@ const Queue = require('rethinkdb-job-queue')
 const axios = require('axios')
 const jsonformat = require('json-format')
 const _ = require('lodash');
+let shell = require('shelljs')
 const qOptions = {
     name: 'Metalsmith',
     // concurrency: 5 // The queue and table name
@@ -96,6 +97,7 @@ function getJobs() {
                 }
             };
             let loadingText
+            
             logfile = logfile + '\n\t'+"["+d+"]:-"+'Number of pages to Publish :' + rawConfigs[1].pageSettings.length
             for (let i = 0; i < rawConfigs[1].pageSettings.length; i++) {
                 logfile = logfile + '\n\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n'
@@ -461,7 +463,7 @@ function getJobs() {
 
                     })
 
-                responseMetal = "var Metalsmith=require('" + config.metalpath + "metalsmith');\nvar markdown=require('" + config.metalpath + "metalsmith-markdown');\nvar layouts=require('" + config.metalpath + "metalsmith-layouts');\nvar permalinks=require('" + config.metalpath + "metalsmith-permalinks');\nvar inPlace = require('" + config.metalpath + "metalsmith-in-place')\nvar fs=require('" + config.metalpath + "file-system');\nvar Handlebars=require('" + config.metalpath + "handlebars');\n Metalsmith(__dirname)\n.metadata({\ntitle: \"Demo Title\",\ndescription: \"Some Description\",\ngenerator: \"Metalsmith\",\nurl: \"http://www.metalsmith.io/\"})\n.source('')\n.destination('" + destPath + "')\n.clean(false)\n.use(markdown())\n.use(inPlace(true))\n.use(layouts({engine:'handlebars',directory:'" + folderUrl + "/Layout'}))\n.build(function(err,files)\n{if(err){\nconsole.log(err)\n}});"
+                responseMetal = "var Metalsmith=require('" + config.metalpath + "metalsmith');\nvar markdown=require('" + config.metalpath + "metalsmith-markdown');\nvar layouts=require('" + config.metalpath + "metalsmith-layouts');\nvar permalinks=require('" + config.metalpath + "metalsmith-permalinks');\nvar inPlace = require('" + config.metalpath + "metalsmith-in-place')\nvar fs=require('" + config.metalpath + "file-system');\nvar Handlebars=require('" + config.metalpath + "handlebars');\n Metalsmith(__dirname)\n.source('')\n.destination('" + destPath + "')\n.clean(false)\n.use(markdown())\n.use(inPlace(true))\n.use(layouts({engine:'handlebars',directory:'" + folderUrl + "/Layout'}))\n.build(function(err,files)\n{if(err){\nconsole.log(err)\n}});"
 
                 backupMetalSmith = (responseMetal);
 
@@ -627,7 +629,6 @@ function getJobs() {
                                                         logfile = logfile + '\n\t'+"["+d+"]:-"+'Successfully file published.'
                                                             // var previewFile = this.$store.state.fileUrl.replace(/\\/g, "\/");
                                                             // previewFile = folderUrl.replace('/var/www/html', '');
-
                                                         await axios.delete(config.baseURL + '/save-menu/0?filename=' + folderUrl + '/Preview')
                                                             .then(async(res) => {
                                                                 await axios.delete(config.baseURL + '/save-menu/0?filename=' + folderUrl + '/temp').catch((e) => {
@@ -638,17 +639,17 @@ function getJobs() {
                                                                 }).catch((e) => {
                                                                     console.log(e)
                                                                 })
-                                                                if (vuepartials != undefined && vuepartials.length > 0) {
-                                                                    for (let x = 0; x < vuepartials.length; x++) {
+                                                                // if (vuepartials != undefined && vuepartials.length > 0) {
+                                                                //     for (let x = 0; x < vuepartials.length; x++) {
 
-                                                                        await axios.delete(config.baseURL + '/save-menu/0?filename=' + config.pluginsPath + '/public/' + vuepartials[x].value.split('.')[0] + '.js').then((res) => {
-                                                                                //console.log(res)
-                                                                            })
-                                                                            .catch((e) => {
-                                                                                console.log(e)
-                                                                            })
-                                                                    }
-                                                                }
+                                                                //         await axios.delete(config.baseURL + '/save-menu/0?filename=' + config.pluginsPath + '/public/' + vuepartials[x].value.split('.')[0] + '.js').then((res) => {
+                                                                //                 //console.log(res)
+                                                                //             })
+                                                                //             .catch((e) => {
+                                                                //                 console.log(e)
+                                                                //             })
+                                                                //     }
+                                                                // }
                                                                 //console.log("layout file reset")
                                                                 if (Layout == 'Blank') {
                                                                     await axios.delete(config.baseURL + '/save-menu/0?filename=' + folderUrl + '/Layout/Blank.layout')
@@ -758,6 +759,32 @@ function getJobs() {
 
                     })
             }
+            let webpack=await axios.get(config.baseURL + '/save-menu/0?path=' + folderUrl + '/public/assets/webpackconfig.js').catch((err) => {
+                    console.log(err);})
+            // console.log('webpackconfig',webpack.data)
+            // let substr=''
+            // for (let i = 0; i < rawConfigs[1].pageSettings.length; i++){
+            //     substr=substr+"new HtmlWebpackPlugin({ filename: '"+rawConfigs[1].pageSettings[i].PageName+"', template: '"+folderUrl + '/public/'+rawConfigs[1].pageSettings[i].PageName+"'}),\n"
+            // }
+            // let mySubString = webpack.data.substring(
+            //     webpack.data.lastIndexOf("@"), 
+            //     webpack.data.lastIndexOf("&")+1
+            // );
+            // webpack.data=webpack.data.replace(mySubString,substr)
+            // console.log('webpack',webpack.data)
+            // await axios.post(config.baseURL + '/save-menu',{
+            //     filename:folderUrl + '/public/assets/webpackconfig.js',
+            //     text:webpack.data,
+            //     type: 'file'
+            // }).then(async(res)=>{
+            //     // await axios.get(config.baseURL + '/webpack?path=' + folderUrl, {})
+            //     // .then((res) => {console.log(res)})
+            //     // .catch((e)=>{console.log(e)})
+            //     let response = shell.exec('npx webpack --config ' + folderUrl + '/public/assets/webpackconfig.js');
+            // }).catch((e)=>{
+            //     console.log(e)
+            // })
+
             await axios.get(config.baseURL + '/delete-publish-files?path=' + job.websitejobqueuedata.RepojsonData.configData[0].repoSettings[0].BaseURL)
                 .catch((e) => {
                     console.log(e)
