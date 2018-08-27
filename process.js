@@ -564,7 +564,7 @@ function getJobs() {
                                                 + "<link rel='stylesheet' type='text/css' href='https://res.cloudinary.com/flowz/raw/upload/v1532335463/builder/css/component-base.css'>\n"
                                                 + '<script src="https://unpkg.com/iview/dist/iview.min.js"><\/script>'
                                                 + '<link rel="stylesheet" href="https://unpkg.com/iview/dist/styles/iview.css">'
-                                                + "<script type='text/javascript' src='https://res.cloudinary.com/flowz/raw/upload/v1533551691/builder/js/vuecomponent.js'><\/script>"
+                                                + "<script type='text/javascript' src='https://res.cloudinary.com/flowz/raw/upload/builder/js/vuecomponent.js'><\/script>"
                               }
 
                                 let newContent = "<html>\n<head>\n" + tophead +
