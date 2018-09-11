@@ -7,6 +7,7 @@ const qOptions = {
     name: 'Metalsmith',
     // concurrency: 5 // The queue and table name
 }
+const gitlabtoken=process.env.gitlabtoken
 const cxnOptions = {
     host: process.env.RDB_HOST,
     port: process.env.RDB_PORT,
@@ -789,13 +790,13 @@ function getJobs() {
                     console.log(e)
                 })
                 // committing this into gitlab deployment repo. 
-                let buildpayload='{ "branch": "master","commit_message": "publishing123", "actions": ['+arrayofpages+'] }'
+                let buildpayload='{ "branch": "master","commit_message": "publishing", "actions": ['+arrayofpages+'] }'
                 // console.log('buildpayload::::::::::::::::::::::::::::::::::::::::::::::::',buildpayload)
                 let axiosoptioncommit={
                     method:'post',
                     url:'https://gitlab.com/api/v4/projects/'+job.websitejobqueuedata.RepojsonData.gitlabconfig.projectid+'/repository/commits',
                     data:buildpayload,
-                    headers:{ 'PRIVATE-TOKEN':'WCr4ehyTqQGLMp11Jaby', 'Content-Type':'application/json'}
+                    headers:{ 'PRIVATE-TOKEN':gitlabtoken, 'Content-Type':'application/json'}
                   }
                   await axios(axiosoptioncommit)
                   .then(async (res)=>{
