@@ -1,11 +1,13 @@
 const Queue = require('rethinkdb-job-queue')
+var Base64 = require('js-base64').Base64;
+
 const axios = require('axios')
-const jsonformat = require('json-format')
 const _ = require('lodash');
 const qOptions = {
     name: 'Metalsmith',
     // concurrency: 5 // The queue and table name
 }
+const gitlabtoken=process.env.gitlabtoken
 const cxnOptions = {
     host: process.env.RDB_HOST,
     port: process.env.RDB_PORT,
@@ -21,7 +23,8 @@ let rawConfigs
 
 const q = new Queue(cxnOptions, qOptions)
 let config;
-
+let arrayofpages=[]
+// let buildpayload='{ "branch": "master","commit_message": "publishing", "actions": '+arrayofpages+' }'
 let websitename;
 let websiteid;
 let logfile = '';
@@ -33,6 +36,7 @@ function getJobs() {
         try {
             console.log('starting job:',job.id)
             userId=job.userId;
+            arrayofpages=[]
             logfile = '\n\n#######################################################################\n\n\t'+"["+d+"]:-"+'Publish starting for Website:' + job.websitejobqueuedata.RepojsonData.websiteName + '\n\n\t'+"["+d+"]:-"+'userID:' + job.websitejobqueuedata.RepojsonData.userId + '\n\n\t'+"["+d+"]:-"+'Starting Publish...\n'
             websitename = job.websitejobqueuedata.RepojsonData.websiteName;
             websiteid = job.websitejobqueuedata.RepojsonData.id
@@ -618,6 +622,7 @@ function getJobs() {
                                         // this.saveFileLoading = false;
 
                                         await axios.get(config.baseURL + '/metalsmith-publish?path=' + folderUrl, {}).then(async(response) => {
+                                                
                                                 await axios.post(config.baseURL + '/save-menu', {
                                                         filename: mainMetal,
                                                         text: backupMetalSmith,
@@ -627,7 +632,20 @@ function getJobs() {
                                                         logfile = logfile + '\n\t'+"["+d+"]:-"+'Successfully file published.'
                                                             // var previewFile = this.$store.state.fileUrl.replace(/\\/g, "\/");
                                                             // previewFile = folderUrl.replace('/var/www/html', '');
-
+                                                        let finalouputpage=await axios.get(config.baseURL + '/save-menu/0?path=' + websitePath + job.userId + '/' + job.websiteId + '/public/'+nameF+'.html',{}).catch((e)=>{console.log(e)})
+                                                        // console.log('nameF:',nameF)
+                                                        let tempjson=''
+                                                        let gitlabfileresponse=await axios.get('https://gitlab.com/api/v4/projects/'+job.websitejobqueuedata.RepojsonData.gitlabconfig.projectid+'/repository/files/'+nameF+'.html?ref=master')
+                                                        .catch((e)=>{})
+                                                        // console.log('gitlabfileresponse',gitlabfileresponse)
+                                                        if(gitlabfileresponse!=undefined && gitlabfileresponse.data){
+                                                        // console.log('found')
+                                                        tempjson='{"action": "update","encoding":"base64","file_path": "'+nameF+'.html","content": "'+Base64.btoa(finalouputpage.data)+'" }'  
+                                                        }else{
+                                                         // console.log('not found ')
+                                                         tempjson='{"action": "create","encoding":"base64","file_path": "'+nameF+'.html","content": "'+Base64.btoa(finalouputpage.data)+'" }'  
+                                                        }
+                                                        arrayofpages.push(tempjson)
                                                         await axios.delete(config.baseURL + '/save-menu/0?filename=' + folderUrl + '/Preview')
                                                             .then(async(res) => {
                                                                 await axios.delete(config.baseURL + '/save-menu/0?filename=' + folderUrl + '/temp').catch((e) => {
@@ -638,17 +656,17 @@ function getJobs() {
                                                                 }).catch((e) => {
                                                                     console.log(e)
                                                                 })
-                                                                if (vuepartials != undefined && vuepartials.length > 0) {
-                                                                    for (let x = 0; x < vuepartials.length; x++) {
+                                                                // if (vuepartials != undefined && vuepartials.length > 0) {
+                                                                //     for (let x = 0; x < vuepartials.length; x++) {
 
-                                                                        await axios.delete(config.baseURL + '/save-menu/0?filename=' + config.pluginsPath + '/public/' + vuepartials[x].value.split('.')[0] + '.js').then((res) => {
-                                                                                //console.log(res)
-                                                                            })
-                                                                            .catch((e) => {
-                                                                                console.log(e)
-                                                                            })
-                                                                    }
-                                                                }
+                                                                //         await axios.delete(config.baseURL + '/save-menu/0?filename=' + config.pluginsPath + '/public/' + vuepartials[x].value.split('.')[0] + '.js').then((res) => {
+                                                                //                 //console.log(res)
+                                                                //             })
+                                                                //             .catch((e) => {
+                                                                //                 console.log(e)
+                                                                //             })
+                                                                //     }
+                                                                // }
                                                                 //console.log("layout file reset")
                                                                 if (Layout == 'Blank') {
                                                                     await axios.delete(config.baseURL + '/save-menu/0?filename=' + folderUrl + '/Layout/Blank.layout')
@@ -667,7 +685,7 @@ function getJobs() {
                                                     }).catch((e) => {
                                                         console.log(e)
                                                     });
-
+                                                    
                                             })
                                             .catch((err) => {
                                                 // this.saveFileLoading = false;
@@ -772,13 +790,29 @@ function getJobs() {
                 }).catch((e) => {
                     console.log(e)
                 })
-
+                // committing this into gitlab deployment repo. 
+                let buildpayload='{ "branch": "master","commit_message": "publishing", "actions": ['+arrayofpages+'] }'
+                // console.log('buildpayload::::::::::::::::::::::::::::::::::::::::::::::::',buildpayload)
+                let axiosoptioncommit={
+                    method:'post',
+                    url:'https://gitlab.com/api/v4/projects/'+job.websitejobqueuedata.RepojsonData.gitlabconfig.projectid+'/repository/commits',
+                    data:buildpayload,
+                    headers:{ 'PRIVATE-TOKEN':gitlabtoken, 'Content-Type':'application/json'}
+                  }
+                  await axios(axiosoptioncommit)
+                  .then(async (res)=>{
+                    console.log('Commit Done in gitlab. Netlify triggered')
+                    await axios.post(job.websitejobqueuedata.RepojsonData.gitlabconfig.webhook_url,{}).then((res)=>{console.log('webhook called')})
+                  })
+                  .catch((e)=>{console.log(e)}) 
+                // console.log('buildpayload',buildpayload)
                 await axios.patch(config.baseURL + '/jobqueue', {
                     'Status': 'completed',
                     'websiteName': websitename,
                     'websiteid': websiteid,
                     'userId':userId
                 }).then((res)=>{
+
                     console.log('job completed')
                 })
                 .catch((e) => {
