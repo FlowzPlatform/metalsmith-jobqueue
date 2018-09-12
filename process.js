@@ -50,6 +50,7 @@ function getJobs() {
             }
 
             let folderUrl = websitePath + job.userId + '/' + job.websiteId + '/.temppublish'
+            console.log('folderUrl:',folderUrl)
                 //let folderUrl = rawConfigs[0].repoSettings[0].BaseURL + '/.temppublish'
             let partialstotal = []
             let pageSeoTitle;
@@ -98,6 +99,7 @@ function getJobs() {
             let loadingText
             logfile = logfile + '\n\t'+"["+d+"]:-"+'Number of pages to Publish :' + rawConfigs[1].pageSettings.length
             for (let i = 0; i < rawConfigs[1].pageSettings.length; i++) {
+                console.log(i,'page:',rawConfigs[1].pageSettings[i].PageName)
                 logfile = logfile + '\n\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n'
                 if (checkcancel == false) {
                     // console.log('cancelling current')
@@ -638,17 +640,17 @@ function getJobs() {
                                                                 }).catch((e) => {
                                                                     console.log(e)
                                                                 })
-                                                                if (vuepartials != undefined && vuepartials.length > 0) {
-                                                                    for (let x = 0; x < vuepartials.length; x++) {
+                                                                // if (vuepartials != undefined && vuepartials.length > 0) {
+                                                                //     for (let x = 0; x < vuepartials.length; x++) {
 
-                                                                        await axios.delete(config.baseURL + '/save-menu/0?filename=' + config.pluginsPath + '/public/' + vuepartials[x].value.split('.')[0] + '.js').then((res) => {
-                                                                                //console.log(res)
-                                                                            })
-                                                                            .catch((e) => {
-                                                                                console.log(e)
-                                                                            })
-                                                                    }
-                                                                }
+                                                                //         await axios.delete(config.baseURL + '/save-menu/0?filename=' + config.pluginsPath + '/public/' + vuepartials[x].value.split('.')[0] + '.js').then((res) => {
+                                                                //                 //console.log(res)
+                                                                //             })
+                                                                //             .catch((e) => {
+                                                                //                 console.log(e)
+                                                                //             })
+                                                                //     }
+                                                                // }
                                                                 //console.log("layout file reset")
                                                                 if (Layout == 'Blank') {
                                                                     await axios.delete(config.baseURL + '/save-menu/0?filename=' + folderUrl + '/Layout/Blank.layout')
@@ -824,6 +826,7 @@ function getJobs() {
 
     // })
     q.on('error', (err) => {
+        console.log('error___________________________________')
         console.log('Queue Id: ' + err.queueId)
         console.error(err)
     })
