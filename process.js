@@ -1,11 +1,13 @@
 const Queue = require('rethinkdb-job-queue')
+var Base64 = require('js-base64').Base64;
+
 const axios = require('axios')
-const jsonformat = require('json-format')
 const _ = require('lodash');
 const qOptions = {
     name: 'Metalsmith',
     // concurrency: 5 // The queue and table name
 }
+const gitlabtoken=process.env.gitlabtoken
 const cxnOptions = {
     host: process.env.RDB_HOST,
     port: process.env.RDB_PORT,
@@ -21,7 +23,8 @@ let rawConfigs
 
 const q = new Queue(cxnOptions, qOptions)
 let config;
-
+let arrayofpages=[]
+// let buildpayload='{ "branch": "master","commit_message": "publishing", "actions": '+arrayofpages+' }'
 let websitename;
 let websiteid;
 let logfile = '';
@@ -33,6 +36,7 @@ function getJobs() {
         try {
             console.log('starting job:',job.id)
             userId=job.userId;
+            arrayofpages=[]
             logfile = '\n\n#######################################################################\n\n\t'+"["+d+"]:-"+'Publish starting for Website:' + job.websitejobqueuedata.RepojsonData.websiteName + '\n\n\t'+"["+d+"]:-"+'userID:' + job.websitejobqueuedata.RepojsonData.userId + '\n\n\t'+"["+d+"]:-"+'Starting Publish...\n'
             websitename = job.websitejobqueuedata.RepojsonData.websiteName;
             websiteid = job.websitejobqueuedata.RepojsonData.id
@@ -50,7 +54,6 @@ function getJobs() {
             }
 
             let folderUrl = websitePath + job.userId + '/' + job.websiteId + '/.temppublish'
-            console.log('folderUrl:',folderUrl)
                 //let folderUrl = rawConfigs[0].repoSettings[0].BaseURL + '/.temppublish'
             let partialstotal = []
             let pageSeoTitle;
@@ -99,7 +102,6 @@ function getJobs() {
             let loadingText
             logfile = logfile + '\n\t'+"["+d+"]:-"+'Number of pages to Publish :' + rawConfigs[1].pageSettings.length
             for (let i = 0; i < rawConfigs[1].pageSettings.length; i++) {
-                console.log(i,'page:',rawConfigs[1].pageSettings[i].PageName)
                 logfile = logfile + '\n\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n'
                 if (checkcancel == false) {
                     // console.log('cancelling current')
@@ -566,7 +568,7 @@ function getJobs() {
                                                 + "<link rel='stylesheet' type='text/css' href='https://res.cloudinary.com/flowz/raw/upload/v1532335463/builder/css/component-base.css'>\n"
                                                 + '<script src="https://unpkg.com/iview/dist/iview.min.js"><\/script>'
                                                 + '<link rel="stylesheet" href="https://unpkg.com/iview/dist/styles/iview.css">'
-                                                + "<script type='text/javascript' src='https://res.cloudinary.com/flowz/raw/upload/builder/js/vuecomponent.js'><\/script>"
+                                                + "<script type='text/javascript' src='https://res.cloudinary.com/flowz/raw/upload/v1533551691/builder/js/vuecomponent.js'><\/script>"
                               }
 
                                 let newContent = "<html>\n<head>\n" + tophead +
@@ -580,7 +582,6 @@ function getJobs() {
                                     '\n' + divappend +
                                     "<script src='https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.js'><\/script>\n" +
                                     "<script src='https://cdn.jsdelivr.net/npm/feathers-client@1.1.0/dist/feathers.js'><\/script>\n" +
-                                    '<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.17.0/jquery.validate.min.js"><\/script>\n'+
                                     "<script src='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js' crossorigin='anonymous'><\/script>\n" +
                                     '<script src="./assets/client-plugins/flowz-builder-engine.js"><\/script>\n' +
                                     '<script src="https://res.cloudinary.com/flowz/raw/upload/v1533202314/builder/js/g-form.js"><\/script>\n' +
@@ -620,6 +621,7 @@ function getJobs() {
                                         // this.saveFileLoading = false;
 
                                         await axios.get(config.baseURL + '/metalsmith-publish?path=' + folderUrl, {}).then(async(response) => {
+                                                
                                                 await axios.post(config.baseURL + '/save-menu', {
                                                         filename: mainMetal,
                                                         text: backupMetalSmith,
@@ -685,7 +687,7 @@ function getJobs() {
                                                     }).catch((e) => {
                                                         console.log(e)
                                                     });
-
+                                                    
                                             })
                                             .catch((err) => {
                                                 // this.saveFileLoading = false;
@@ -809,13 +811,13 @@ function getJobs() {
                 }
                  
                 // console.log('buildpayload',buildpayload)
-
                 await axios.patch(config.baseURL + '/jobqueue', {
                     'Status': 'completed',
                     'websiteName': websitename,
                     'websiteid': websiteid,
                     'userId':userId
                 }).then((res)=>{
+
                     console.log('job completed')
                 })
                 .catch((e) => {
@@ -861,7 +863,6 @@ function getJobs() {
 
     // })
     q.on('error', (err) => {
-        console.log('error___________________________________')
         console.log('Queue Id: ' + err.queueId)
         console.error(err)
     })
