@@ -23,6 +23,7 @@ let rawConfigs
 
 const q = new Queue(cxnOptions, qOptions)
 let config;
+let arrayofrepopages=[]
 let arrayofpages=[]
 // let buildpayload='{ "branch": "master","commit_message": "publishing", "actions": '+arrayofpages+' }'
 let websitename;
@@ -36,7 +37,20 @@ function getJobs() {
         try {
             console.log('starting job:',job.id)
             userId=job.userId;
+            arrayofrepopages=[]
             arrayofpages=[]
+            let getrepolisting;
+            let count=1
+            do{
+            getrepolisting= await axios.get('https://gitlab.com/api/v4/projects/'+job.websitejobqueuedata.RepojsonData.gitlabconfig.projectid+'/repository/tree?page='+count,{
+              headers:{
+                'PRIVATE-TOKEN': gitlabtoken
+              }
+             })
+             arrayofrepopages=arrayofrepopages.concat(getrepolisting.data)
+             count=count+1
+            }while(getrepolisting.data.length==20)
+            // console.log('arrayofrepopages:',arrayofrepopages)
             logfile = '\n\n#######################################################################\n\n\t'+"["+d+"]:-"+'Publish starting for Website:' + job.websitejobqueuedata.RepojsonData.websiteName + '\n\n\t'+"["+d+"]:-"+'userID:' + job.websitejobqueuedata.RepojsonData.userId + '\n\n\t'+"["+d+"]:-"+'Starting Publish...\n'
             websitename = job.websitejobqueuedata.RepojsonData.websiteName;
             websiteid = job.websitejobqueuedata.RepojsonData.id
@@ -101,6 +115,8 @@ function getJobs() {
             };
             let loadingText
             logfile = logfile + '\n\t'+"["+d+"]:-"+'Number of pages to Publish :' + rawConfigs[1].pageSettings.length
+
+
             for (let i = 0; i < rawConfigs[1].pageSettings.length; i++) {
                 logfile = logfile + '\n\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n'
                 if (checkcancel == false) {
@@ -635,17 +651,28 @@ function getJobs() {
                                                         // console.log('nameF:',nameF)
                                                         if(job.websitejobqueuedata.RepojsonData.gitlabconfig!=undefined){
                                                             let tempjson=''
-                                                            let gitlabfileresponse=await axios.get('https://gitlab.com/api/v4/projects/'+job.websitejobqueuedata.RepojsonData.gitlabconfig.projectid+'/repository/files/'+nameF+'.html?ref=master')
-                                                            .catch((e)=>{})
-                                                            // console.log('gitlabfileresponse',gitlabfileresponse)
-                                                            if(gitlabfileresponse!=undefined && gitlabfileresponse.data){
-                                                            // console.log('found')
-                                                            tempjson='{"action": "update","encoding":"base64","file_path": "'+nameF+'.html","content": "'+Base64.btoa(finalouputpage.data)+'" }'  
+                                                            // let gitlabfileresponse=await axios.get('https://gitlab.com/api/v4/projects/'+job.websitejobqueuedata.RepojsonData.gitlabconfig.projectid+'/repository/files/'+nameF+'.html?ref=master')
+                                                            // .catch((e)=>{})
+                                                            // // console.log('gitlabfileresponse',gitlabfileresponse)
+                                                            // if(gitlabfileresponse!=undefined && gitlabfileresponse.data){
+                                                            // // console.log('found')
+                                                            // tempjson='{"action": "update","encoding":"base64","file_path": "'+nameF+'.html","content": "'+Base64.btoa(finalouputpage.data)+'" }'  
+                                                            // }else{
+                                                            //  // console.log('not found ')
+                                                            //  tempjson='{"action": "create","encoding":"base64","file_path": "'+nameF+'.html","content": "'+Base64.btoa(finalouputpage.data)+'" }'  
+                                                            // }
+                                                            // console.log('nameF:',nameF)
+                                                            let fileindex=_.findIndex(arrayofrepopages,function(o){
+                                                              return o.name==nameF+'.html'
+                                                            })
+                                                            // console.log('fileindex:',fileindex)
+                                                            if(fileindex!=-1){
+                                                                 tempjson='{"action": "update","encoding":"base64","file_path": "'+nameF+'.html","content": "'+Base64.btoa(finalouputpage.data)+'" }'  
                                                             }else{
-                                                             // console.log('not found ')
-                                                             tempjson='{"action": "create","encoding":"base64","file_path": "'+nameF+'.html","content": "'+Base64.btoa(finalouputpage.data)+'" }'  
+                                                                tempjson='{"action": "create","encoding":"base64","file_path": "'+nameF+'.html","content": "'+Base64.btoa(finalouputpage.data)+'" }'  
                                                             }
                                                             arrayofpages.push(tempjson)  
+
                                                         }
                                                         
                                                         await axios.delete(config.baseURL + '/save-menu/0?filename=' + folderUrl + '/Preview')
