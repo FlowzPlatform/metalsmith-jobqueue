@@ -563,7 +563,7 @@ function getJobs() {
                                 divappstart   = '<div id="app">'
                                 divappend     = '</div>'
                                 dfscript      = "<script type='text/javascript' src='https://unpkg.com/vue/dist/vue.js'><\/script>\n" 
-                                                + "<link rel='stylesheet' type='text/css' href='https://res.cloudinary.com/flowz/raw/upload/v1532335463/builder/css/component-base.css'>\n"
+                                                + "<link rel='stylesheet' type='text/css' href='https://res.cloudinary.com/flowz/raw/upload/v1526901609/component-base.css'>\n"
                                                 + '<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.5/lodash.min.js"><\/script>\n'
                                                 + '<script src="https://unpkg.com/vuejs-paginate@1.9.0/dist/index.js"><\/script>\n'
                                                 + '<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">'
@@ -581,7 +581,8 @@ function getJobs() {
                                                 + "<script type='text/javascript' src='https://cdn.jsdelivr.net/web-animations/latest/web-animations.min.js'><\/script>\n"
                                                 + "<script type='text/javascript' src='https://hammerjs.github.io/dist/hammer.min.js'><\/script>\n"
                                                 + "<script type='text/javascript' src='https://cdnjs.cloudflare.com/ajax/libs/muuri/0.5.3/muuri.min.js'><\/script>\n"
-                                                + "<link rel='stylesheet' type='text/css' href='https://res.cloudinary.com/flowz/raw/upload/v1532335463/builder/css/component-base.css'>\n"
+                                                + "<link rel='stylesheet' type='text/css' href='https://res.cloudinary.com/flowz/raw/upload/v1526901609/component-base.css'>\n"
+                                                + "<script type='text/javascript' src='https://unpkg.com/vue/dist/vue.js'><\/script>"
                                                 + '<script src="https://unpkg.com/iview/dist/iview.min.js"><\/script>'
                                                 + '<link rel="stylesheet" href="https://unpkg.com/iview/dist/styles/iview.css">'
                                                 + "<script type='text/javascript' src='https://res.cloudinary.com/flowz/raw/upload/v1533551691/builder/js/vuecomponent.js'><\/script>"
@@ -591,7 +592,7 @@ function getJobs() {
                                     "<title>" + SeoTitle + "</title>\n" + favicon + '\n' +
                                     '<script src="https://code.jquery.com/jquery-3.3.1.min.js"><\/script>\n' +
                                     "<link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/themes/base/theme.min.css' />\n" +
-                                    '<link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">\n' +
+                                    '<link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">\n' +
                                     "<link rel='stylesheet' href='./main-files/main.css'/>\n" +
                                     endhead + "\n</head>\n<body>\n" + divappstart +
                                     topbody + layoutdata.data +
@@ -600,9 +601,8 @@ function getJobs() {
                                     "<script src='https://cdn.jsdelivr.net/npm/feathers-client@1.1.0/dist/feathers.js'><\/script>\n" +
                                     "<script src='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js' crossorigin='anonymous'><\/script>\n" +
                                     '<script src="./assets/client-plugins/flowz-builder-engine.js"><\/script>\n' +
-                                    '<script src="https://res.cloudinary.com/flowz/raw/upload/v1533202314/builder/js/g-form.js"><\/script>\n' +
-                                    '<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.17.1/axios.min.js"><\/script>\n' +
-                                    // '\n<script src="./assets/client-plugins/global-variables-plugin.js"><\/script>\n' +
+                                    '<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.17.1/axios.js"><\/script>\n' +
+                                    '\n<script src="./assets/client-plugins/global-variables-plugin.js"><\/script>\n' +
                                     endbody + dfscript +
                                     '\n</body>\n</html>';
 
@@ -685,17 +685,17 @@ function getJobs() {
                                                                 }).catch((e) => {
                                                                     console.log(e)
                                                                 })
-                                                                // if (vuepartials != undefined && vuepartials.length > 0) {
-                                                                //     for (let x = 0; x < vuepartials.length; x++) {
+                                                                if (vuepartials != undefined && vuepartials.length > 0) {
+                                                                    for (let x = 0; x < vuepartials.length; x++) {
 
-                                                                //         await axios.delete(config.baseURL + '/save-menu/0?filename=' + config.pluginsPath + '/public/' + vuepartials[x].value.split('.')[0] + '.js').then((res) => {
-                                                                //                 //console.log(res)
-                                                                //             })
-                                                                //             .catch((e) => {
-                                                                //                 console.log(e)
-                                                                //             })
-                                                                //     }
-                                                                // }
+                                                                        await axios.delete(config.baseURL + '/save-menu/0?filename=' + config.pluginsPath + '/public/' + vuepartials[x].value.split('.')[0] + '.js').then((res) => {
+                                                                                //console.log(res)
+                                                                            })
+                                                                            .catch((e) => {
+                                                                                console.log(e)
+                                                                            })
+                                                                    }
+                                                                }
                                                                 //console.log("layout file reset")
                                                                 if (Layout == 'Blank') {
                                                                     await axios.delete(config.baseURL + '/save-menu/0?filename=' + folderUrl + '/Layout/Blank.layout')
