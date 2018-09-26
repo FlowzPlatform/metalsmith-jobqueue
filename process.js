@@ -1,11 +1,13 @@
 const Queue = require('rethinkdb-job-queue')
+var Base64 = require('js-base64').Base64;
+
 const axios = require('axios')
-const jsonformat = require('json-format')
 const _ = require('lodash');
 const qOptions = {
     name: 'Metalsmith',
     // concurrency: 5 // The queue and table name
 }
+const gitlabtoken=process.env.gitlabtoken
 const cxnOptions = {
     host: process.env.RDB_HOST,
     port: process.env.RDB_PORT,
@@ -21,7 +23,9 @@ let rawConfigs
 
 const q = new Queue(cxnOptions, qOptions)
 let config;
-
+let arrayofrepopages=[]
+let arrayofpages=[]
+// let buildpayload='{ "branch": "master","commit_message": "publishing", "actions": '+arrayofpages+' }'
 let websitename;
 let websiteid;
 let logfile = '';
@@ -33,6 +37,20 @@ function getJobs() {
         try {
             console.log('starting job:',job.id)
             userId=job.userId;
+            arrayofrepopages=[]
+            arrayofpages=[]
+            let getrepolisting;
+            let count=1
+            do{
+            getrepolisting= await axios.get('https://gitlab.com/api/v4/projects/'+job.websitejobqueuedata.RepojsonData.gitlabconfig.projectid+'/repository/tree?page='+count,{
+              headers:{
+                'PRIVATE-TOKEN': gitlabtoken
+              }
+             })
+             arrayofrepopages=arrayofrepopages.concat(getrepolisting.data)
+             count=count+1
+            }while(getrepolisting.data.length==20)
+            // console.log('arrayofrepopages:',arrayofrepopages)
             logfile = '\n\n#######################################################################\n\n\t'+"["+d+"]:-"+'Publish starting for Website:' + job.websitejobqueuedata.RepojsonData.websiteName + '\n\n\t'+"["+d+"]:-"+'userID:' + job.websitejobqueuedata.RepojsonData.userId + '\n\n\t'+"["+d+"]:-"+'Starting Publish...\n'
             websitename = job.websitejobqueuedata.RepojsonData.websiteName;
             websiteid = job.websitejobqueuedata.RepojsonData.id
@@ -97,6 +115,8 @@ function getJobs() {
             };
             let loadingText
             logfile = logfile + '\n\t'+"["+d+"]:-"+'Number of pages to Publish :' + rawConfigs[1].pageSettings.length
+
+
             for (let i = 0; i < rawConfigs[1].pageSettings.length; i++) {
                 logfile = logfile + '\n\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n'
                 if (checkcancel == false) {
@@ -565,7 +585,7 @@ function getJobs() {
                                                 + "<script type='text/javascript' src='https://unpkg.com/vue/dist/vue.js'><\/script>"
                                                 + '<script src="https://unpkg.com/iview/dist/iview.min.js"><\/script>'
                                                 + '<link rel="stylesheet" href="https://unpkg.com/iview/dist/styles/iview.css">'
-                                                + "<script type='text/javascript' src='https://res.cloudinary.com/flowz/raw/upload/v1519124435/builder/js/vuecomponent.js'><\/script>"
+                                                + "<script type='text/javascript' src='https://res.cloudinary.com/flowz/raw/upload/v1533551691/builder/js/vuecomponent.js'><\/script>"
                               }
 
                                 let newContent = "<html>\n<head>\n" + tophead +
@@ -578,7 +598,7 @@ function getJobs() {
                                     topbody + layoutdata.data +
                                     '\n' + divappend +
                                     "<script src='https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.js'><\/script>\n" +
-                                    "<script src='https://cdn.rawgit.com/feathersjs/feathers-client/v1.1.0/dist/feathers.js'><\/script>\n" +
+                                    "<script src='https://cdn.jsdelivr.net/npm/feathers-client@1.1.0/dist/feathers.js'><\/script>\n" +
                                     "<script src='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js' crossorigin='anonymous'><\/script>\n" +
                                     '<script src="./assets/client-plugins/flowz-builder-engine.js"><\/script>\n' +
                                     '<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.17.1/axios.js"><\/script>\n' +
@@ -617,6 +637,7 @@ function getJobs() {
                                         // this.saveFileLoading = false;
 
                                         await axios.get(config.baseURL + '/metalsmith-publish?path=' + folderUrl, {}).then(async(response) => {
+                                                
                                                 await axios.post(config.baseURL + '/save-menu', {
                                                         filename: mainMetal,
                                                         text: backupMetalSmith,
@@ -626,7 +647,34 @@ function getJobs() {
                                                         logfile = logfile + '\n\t'+"["+d+"]:-"+'Successfully file published.'
                                                             // var previewFile = this.$store.state.fileUrl.replace(/\\/g, "\/");
                                                             // previewFile = folderUrl.replace('/var/www/html', '');
+                                                        let finalouputpage=await axios.get(config.baseURL + '/save-menu/0?path=' + websitePath + job.userId + '/' + job.websiteId + '/public/'+nameF+'.html',{}).catch((e)=>{console.log(e)})
+                                                        // console.log('nameF:',nameF)
+                                                        if(job.websitejobqueuedata.RepojsonData.gitlabconfig!=undefined){
+                                                            let tempjson=''
+                                                            // let gitlabfileresponse=await axios.get('https://gitlab.com/api/v4/projects/'+job.websitejobqueuedata.RepojsonData.gitlabconfig.projectid+'/repository/files/'+nameF+'.html?ref=master')
+                                                            // .catch((e)=>{})
+                                                            // // console.log('gitlabfileresponse',gitlabfileresponse)
+                                                            // if(gitlabfileresponse!=undefined && gitlabfileresponse.data){
+                                                            // // console.log('found')
+                                                            // tempjson='{"action": "update","encoding":"base64","file_path": "'+nameF+'.html","content": "'+Base64.btoa(finalouputpage.data)+'" }'  
+                                                            // }else{
+                                                            //  // console.log('not found ')
+                                                            //  tempjson='{"action": "create","encoding":"base64","file_path": "'+nameF+'.html","content": "'+Base64.btoa(finalouputpage.data)+'" }'  
+                                                            // }
+                                                            // console.log('nameF:',nameF)
+                                                            let fileindex=_.findIndex(arrayofrepopages,function(o){
+                                                              return o.name==nameF+'.html'
+                                                            })
+                                                            // console.log('fileindex:',fileindex)
+                                                            if(fileindex!=-1){
+                                                                 tempjson='{"action": "update","encoding":"base64","file_path": "'+nameF+'.html","content": "'+Base64.btoa(finalouputpage.data)+'" }'  
+                                                            }else{
+                                                                tempjson='{"action": "create","encoding":"base64","file_path": "'+nameF+'.html","content": "'+Base64.btoa(finalouputpage.data)+'" }'  
+                                                            }
+                                                            arrayofpages.push(tempjson)  
 
+                                                        }
+                                                        
                                                         await axios.delete(config.baseURL + '/save-menu/0?filename=' + folderUrl + '/Preview')
                                                             .then(async(res) => {
                                                                 await axios.delete(config.baseURL + '/save-menu/0?filename=' + folderUrl + '/temp').catch((e) => {
@@ -666,7 +714,7 @@ function getJobs() {
                                                     }).catch((e) => {
                                                         console.log(e)
                                                     });
-
+                                                    
                                             })
                                             .catch((err) => {
                                                 // this.saveFileLoading = false;
@@ -771,13 +819,32 @@ function getJobs() {
                 }).catch((e) => {
                     console.log(e)
                 })
-
+                // committing this into gitlab deployment repo. 
+                if(job.websitejobqueuedata.RepojsonData.gitlabconfig!=undefined){
+                  let buildpayload='{ "branch": "master","commit_message": "publishing", "actions": ['+arrayofpages+'] }'
+                // console.log('buildpayload::::::::::::::::::::::::::::::::::::::::::::::::',buildpayload)
+                let axiosoptioncommit={
+                    method:'post',
+                    url:'https://gitlab.com/api/v4/projects/'+job.websitejobqueuedata.RepojsonData.gitlabconfig.projectid+'/repository/commits',
+                    data:buildpayload,
+                    headers:{ 'PRIVATE-TOKEN':gitlabtoken, 'Content-Type':'application/json'}
+                  }
+                  await axios(axiosoptioncommit)
+                  .then(async (res)=>{
+                    console.log('Commit Done in gitlab. Netlify triggered')
+                    await axios.post(job.websitejobqueuedata.RepojsonData.gitlabconfig.webhook_url,{}).then((res)=>{console.log('webhook called')})
+                  })
+                  .catch((e)=>{console.log(e)})  
+                }
+                 
+                // console.log('buildpayload',buildpayload)
                 await axios.patch(config.baseURL + '/jobqueue', {
                     'Status': 'completed',
                     'websiteName': websitename,
                     'websiteid': websiteid,
                     'userId':userId
                 }).then((res)=>{
+
                     console.log('job completed')
                 })
                 .catch((e) => {
