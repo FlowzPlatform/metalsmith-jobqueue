@@ -39,6 +39,7 @@ function getJobs() {
             userId=job.userId;
             arrayofrepopages=[]
             arrayofpages=[]
+            if(job.websitejobqueuedata.RepojsonData.gitlabconfig!=undefined){
             let getrepolisting;
             let count=1
             do{
@@ -50,6 +51,8 @@ function getJobs() {
              arrayofrepopages=arrayofrepopages.concat(getrepolisting.data)
              count=count+1
             }while(getrepolisting.data.length==20)
+            }
+            
             // console.log('arrayofrepopages:',arrayofrepopages)
             logfile = '\n\n#######################################################################\n\n\t'+"["+d+"]:-"+'Publish starting for Website:' + job.websitejobqueuedata.RepojsonData.websiteName + '\n\n\t'+"["+d+"]:-"+'userID:' + job.websitejobqueuedata.RepojsonData.userId + '\n\n\t'+"["+d+"]:-"+'Starting Publish...\n'
             websitename = job.websitejobqueuedata.RepojsonData.websiteName;
@@ -667,9 +670,9 @@ function getJobs() {
                                                             })
                                                             // console.log('fileindex:',fileindex)
                                                             if(fileindex!=-1){
-                                                                 tempjson='{"action": "update","encoding":"base64","file_path": "'+nameF+'.html","content": "'+Base64.btoa(finalouputpage.data)+'" }'  
+                                                                 tempjson='{"action": "update","encoding":"base64","file_path": "'+nameF+'.html","content": "'+Base64.btoa(unescape(encodeURIComponent(finalouputpage.data)))+'" }'  
                                                             }else{
-                                                                tempjson='{"action": "create","encoding":"base64","file_path": "'+nameF+'.html","content": "'+Base64.btoa(finalouputpage.data)+'" }'  
+                                                                tempjson='{"action": "create","encoding":"base64","file_path": "'+nameF+'.html","content": "'+Base64.btoa(unescape(encodeURIComponent(finalouputpage.data)))+'" }'  
                                                             }
                                                             arrayofpages.push(tempjson)  
 
