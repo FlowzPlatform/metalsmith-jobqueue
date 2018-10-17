@@ -15,6 +15,7 @@ then
     RDB_PORT="$RDB_PORT_MASTER";
     WEBROOTPATH="$WEBROOTPATH_MASTER";
     DATAVOLUMES="$DATAVOLUMES_MASTER";
+    VOLUMEDRIVER="$VOLUMEDRIVER_MASTER";
   }
 elif [ "$TRAVIS_BRANCH" = "develop" ]
 then
@@ -33,6 +34,7 @@ then
       RDB_PORT="$RDB_PORT_DEVELOP";
       WEBROOTPATH="$WEBROOTPATH_DEVELOP";
       DATAVOLUMES="$DATAVOLUMES_DEVELOP";
+      VOLUMEDRIVER="$VOLUMEDRIVER_DEVELOP";
   }
 elif [ "$TRAVIS_BRANCH" = "staging" ]
 then
@@ -51,11 +53,12 @@ then
       RDB_PORT="$RDB_PORT_STAGING";
       WEBROOTPATH="$WEBROOTPATH_STAGING";
       DATAVOLUMES="$DATAVOLUMES_STAGING";
+      DATAVOLUMES="$DATAVOLUMES_STAGING";
     }
 else
   {
       echo "call $TRAVIS_BRANCH branch"
-      ENV_ID=`curl -u ""$RANCHER_ACCESSKEY_QA":"$RANCHER_SECRETKEY_QA"" -X GET -H 'Accept: application/json' -H 'Content-Type: application/json' "$RANCHER_URL_QA/v2-beta/projects?name=Develop" | jq '.data[].id' | tr -d '"'`
+      ENV_ID=`curl -u ""$RANCHER_ACCESSKEY_QA":"$RANCHER_SECRETKEY_QA"" -X GET -H 'Accept: application/json' -H 'Content-Type: application/json' "$RANCHER_URL_QA/v2-beta/projects?name=QA" | jq '.data[].id' | tr -d '"'`
       echo $ENV_ID
       USERNAME="$DOCKER_USERNAME";
       TAG="qa";
@@ -68,6 +71,7 @@ else
       RDB_PORT="$RDB_PORT_QA";
       WEBROOTPATH="$WEBROOTPATH_QA";
       DATAVOLUMES="$DATAVOLUMES_QA";
+      VOLUMEDRIVER="$VOLUMEDRIVER_QA";
     }
 fi
 
@@ -87,7 +91,7 @@ curl -u ""$RANCHER_ACCESSKEY":"$RANCHER_SECRETKEY"" \
                                "io.rancher.container.pull_image": "always",
                                "io.rancher.scheduler.affinity:host_label": "'"$BACKEND_HOST"'"
                                 },
-                       "volumeDriver": "rancher-nfs",
+                       "volumeDriver": "'$VOLUMEDRIVER'",
                        "dataVolumes": [
                                   "'"$DATAVOLUMES"'"
                                 ],
