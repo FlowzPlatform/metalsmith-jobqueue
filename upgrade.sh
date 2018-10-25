@@ -16,6 +16,7 @@ then
     WEBROOTPATH="$WEBROOTPATH_MASTER";
     DATAVOLUMES="$DATAVOLUMES_MASTER";
     VOLUMEDRIVER="$VOLUMEDRIVER_MASTER";
+    GITLABTOKEN="$GITLABTOKEN_MASTER";
   }
 elif [ "$TRAVIS_BRANCH" = "develop" ]
 then
@@ -35,6 +36,7 @@ then
       WEBROOTPATH="$WEBROOTPATH_DEVELOP";
       DATAVOLUMES="$DATAVOLUMES_DEVELOP";
       VOLUMEDRIVER="$VOLUMEDRIVER_DEVELOP";
+      GITLABTOKEN="$GITLABTOKEN_DEVELOP";
   }
 elif [ "$TRAVIS_BRANCH" = "staging" ]
 then
@@ -54,6 +56,7 @@ then
       WEBROOTPATH="$WEBROOTPATH_STAGING";
       DATAVOLUMES="$DATAVOLUMES_STAGING";
       DATAVOLUMES="$DATAVOLUMES_STAGING";
+      GITLABTOKEN="$GITLABTOKEN_STAGING";
     }
 else
   {
@@ -72,6 +75,7 @@ else
       WEBROOTPATH="$WEBROOTPATH_QA";
       DATAVOLUMES="$DATAVOLUMES_QA";
       VOLUMEDRIVER="$VOLUMEDRIVER_QA";
+      GITLABTOKEN="$GITLABTOKEN_QA;
     }
 fi
 
@@ -98,7 +102,8 @@ curl -u ""$RANCHER_ACCESSKEY":"$RANCHER_SECRETKEY"" \
                        "environment": {
                                "RDB_HOST": "'"$RDB_HOST"'",
                                "RDB_PORT": "'"$RDB_PORT"'",
-                               "webRootPath":"'"$WEBROOTPATH"'"
+                               "webRootPath":"'"$WEBROOTPATH"'",
+                               "gitlabtoken":"'"$GITLABTOKEN"'"
                                }
              }
         },
